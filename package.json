@@ -1,0 +1,24 @@
+{
+  "name": "project-18",
+  "version": "1.0.0",
+  "description": "NoSQL Challenge: Social Network API",
+  "main": "server.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node server.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/monsosam/Project-18.git"
+  },
+  "author": "Samuel Monson",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/monsosam/Project-18/issues"
+  },
+  "homepage": "https://github.com/monsosam/Project-18#readme",
+  "dependencies": {
+    "express": "^4.18.2",
+    "mongoose": "^8.0.3"
+  }
+}
