@@ -1,6 +1,7 @@
 const mongoose = require('mongoose');
 const express = require('express');
 require('dotenv').config();
+const db = require('./config/connection');
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -25,5 +26,8 @@ mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost/social-network-
 // Use this to log mongo queries being executed!
 mongoose.set('debug', true);
 
-app.listen(PORT, () => 
-console.log(`Connected on localhost:${PORT}`));
+db.once('open', () => {
+    app.listen(PORT, () => {
+      console.log(`API server running on port ${PORT}!`);
+    });
+  });
