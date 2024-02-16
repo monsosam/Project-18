@@ -3,31 +3,85 @@ const Thought = require('../models/thought');
 
 const thoughtController = {
   getAllThoughts: async (req, res) => {
-    // Implement logic to get all thoughts
+    Thought.find().then((thought) => 
+    res.json(thought)).catch((err) => res.status(500).json(err));
   },
 
-  getThoughtById: async (req, res) => {
-    // Implement logic to get a single thought by _id
+  getThoughtById: async ({ params }, res) => {
+    Thought.findOne({ _id: params.id })
+      .then((dbThoughtData) => {
+
+        if (!dbThoughtData) {
+          res.status(404).json({ message: "No thought with this ID" });
+          return;
+        }
+        res.json(dbThoughtData);
+      })
+      .catch((err) => {
+        console.log(err);
+        res.status(400).json(err);
+      });
   },
 
   createThought: async (req, res) => {
-    // Implement logic to create a new thought and push its _id to the associated user's thoughts array
+    Thought.create(req.body)
+    .then((dbThoughtData) => {
+      return User.findOneAndUpdate(
+        {_id:req.body.userID},
+        {$push:{ thoughts:dbThoughtData._id}},
+        {new:true})})
+    .then(userData => res.json(userData))
+    .catch((err) => res.status(500).json(err));
   },
 
   updateThought: async (req, res) => {
-    // Implement logic to update a thought by _id
+    Thought.findOneAndUpdate({_id: req.params.id}, {
+      $set: req.body}, 
+      { runValidators: true, new: true})
+      .then((thought) => {
+      !thought ? res.status(404)
+      .json({message: 'No thought by ID'}) : res.json(thought) })
+      .catch((err) => res.status(500).json(err));
   },
 
   deleteThought: async (req, res) => {
-    // Implement logic to delete a thought by _id
+    Thought.findOneAndDelete({_id: req.params.id})
+    .then((thought) => {
+        if(!thought){
+            res.status(404).json({message: 'No thought with that ID'}) 
+        }
+        return User.findOneAndUpdate(
+            {_id:req.body.userID},
+            {$pull:{thoughts:thought._id}},
+            {new:true}
+        )}).then(() => 
+        res.json({message: 'User and associated apps deleted!'}))
+        .catch((err) => res.status(500).json(err));
   },
 
   createReaction: async (req, res) => {
-    // Implement logic to create a reaction in a single thought's reactions array
+    console.log('You are creating a reaction');
+    console.log(req.body);
+    Thought.findOneAndUpdate(
+      { _id: req.params.thoughtId },
+      { $addToSet: { reactions: req.body} },
+      { runValidators: true, new: true })
+      .then((thought) =>
+        !thought ? res.status(404)
+        .json({ message: 'No friend found with that ID :(' }) : res.json(thought))
+      .catch((err) => res.status(500).json(err));
   },
 
   deleteReaction: async (req, res) => {
-    // Implement logic to delete a reaction by reactionId in a single thought's reactions array
+    console.log(req.params)
+    Thought.findOneAndUpdate(
+      { _id: req.params.thoughtId },
+      { $pull: { reactions: { reactionId: req.params.reactionId} } },
+      { runValidators: true, new: true })
+      .then((thought) =>
+        !thought ? res.status(404)
+        .json({ message: 'No thought found with that ID :(' }) : res.json(thought))
+      .catch((err) => res.status(500).json(err));
   },
 };
 

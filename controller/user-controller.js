@@ -1,33 +1,59 @@
 // controllers/user-controller.js
 const User = require('../models/user');
+const Thought = require('../models/thought');
 
 const userController = {
-  getAllUsers: async (req, res) => {
-    // Implement logic to get all users
+  getAllUsers: async (_req, res) => {
+    User.find().then((users) => 
+    res.json(users)).catch((err) => res.status(500).json(err));
   },
 
   getUserById: async (req, res) => {
-    // Implement logic to get a single user by _id with populated thought and friend data
+    User.findOne({ _id: req.params.id }).then((user) => 
+    !user ? res.status(404).json({ message: 'No user with that ID' }) : res.json(user))
+    .catch((err) => res.status(500).json(err));
   },
 
   createUser: async (req, res) => {
-    // Implement logic to create a new user
+    User.create(req.body).then((dbUserData) => 
+    res.json(dbUserData)).catch((err) => res.status(500).json(err));
   },
 
   updateUser: async (req, res) => {
-    // Implement logic to update a user by _id
+    User.findOneAndUpdate({ _id: req.params.id }, 
+      { $set: req.body }, 
+      { runValidators: true, new: true })
+      .then((user) => {
+      !user ? res.status(404).json({ message: 'No user' }) : res.json(user) })
+      .catch((err) => res.status(500).json(err));
   },
 
   deleteUser: async (req, res) => {
-    // Implement logic to delete a user by _id and remove associated thoughts
+    User.findOneAndDelete({ _id: req.params.id }).
+    then((user) => !user ? res.status(404)
+    .json({ message: 'No user with that ID' }) : Thought.deleteMany({ _id: { $in: user.thoughts }}))
+    .then(() => res.json({ message: 'User and associated thoughts deleted!' }))
+    .catch((err) => res.status(500).json(err));
   },
 
   addFriend: async (req, res) => {
-    // Implement logic to add a new friend to a user's friend list
+    console.log('You are adding a friend');
+    console.log(req.body);
+    User.findOneAndUpdate({ _id: req.params.id }, 
+      { $addToSet: { friends: req.params.friendsId }}, 
+      { runValidators: true, new: true })
+      .then((user) => !user ? res.status(404)
+      .json({ message: 'No friend found with that ID :(' }) : res.json(user))
+      .catch((err) => res.status(500).json(err));
   },
 
   removeFriend: async (req, res) => {
-    // Implement logic to remove a friend from a user's friend list
+    User.findOneAndUpdate({ _id: req.params.id }, 
+      { $pull: { friends: req.params.friendsId } }, 
+      { runValidators: true, new: true })
+      .then((user) => !user ? res.status(404)
+      .json({ message: 'No friend found with that ID :(' }) : res.json(user))
+      .catch((err) => res.status(500).json(err));
   },
 };
 
