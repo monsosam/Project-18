@@ -10,7 +10,7 @@ const {
     deleteUser,
     addFriend,
     removeFriend
-} = require('../controller/user-controller');
+} = require('../../controller/user-controller');
 
 // -- Directs to: /api/users <GET, POST>
 router
