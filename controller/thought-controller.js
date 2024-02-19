@@ -1,87 +1,104 @@
 // controllers/thought-controller.js
-const Thought = require('../models/thought');
+const Thought = require("../models/thought");
 
 const thoughtController = {
   getAllThoughts: async (req, res) => {
-    Thought.find().then((thought) => 
-    res.json(thought)).catch((err) => res.status(500).json(err));
+    try {
+      const thoughts = await Thought.find();
+      res.json(thoughts);
+    } catch (error) {
+      console.error(error.message);
+      res.status(500).send("Server Error");
+    }
   },
 
   getThoughtById: async ({ params }, res) => {
-    Thought.findOne({ _id: params.id })
-      .then((dbThoughtData) => {
-
-        if (!dbThoughtData) {
-          res.status(404).json({ message: "No thought with this ID" });
-          return;
-        }
-        res.json(dbThoughtData);
-      })
-      .catch((err) => {
-        console.log(err);
-        res.status(400).json(err);
-      });
+    try {
+      const thought = await Thought.findById(req.params.id).populate(
+        "reactions"
+      );
+      if (!thought) {
+        return res.status(404).json({ message: "Thought not found" });
+      }
+      res.json(thought);
+    } catch (error) {
+      console.error(error.message);
+      res.status(500).send("Server Error");
+    }
   },
 
   createThought: async (req, res) => {
-    Thought.create(req.body)
-    .then((dbThoughtData) => {
-      return User.findOneAndUpdate(
-        {_id:req.body.userID},
-        {$push:{ thoughts:dbThoughtData._id}},
-        {new:true})})
-    .then(userData => res.json(userData))
-    .catch((err) => res.status(500).json(err));
+    try {
+      const newThought = await Thought.create(req.body);
+
+      const user = await User.findOne({ username: newThought.username });
+      if (user) {
+        user.thoughts.push(newThought._id);
+        await user.save();
+      }
+      res.json(newThought);
+    } catch (error) {
+      console.error(error.message);
+      res.status(500).send("Server Error");
+    }
   },
 
   updateThought: async (req, res) => {
-    Thought.findOneAndUpdate({_id: req.params.id}, {
-      $set: req.body}, 
-      { runValidators: true, new: true})
-      .then((thought) => {
-      !thought ? res.status(404)
-      .json({message: 'No thought by ID'}) : res.json(thought) })
-      .catch((err) => res.status(500).json(err));
+    try {
+      const updatedThought = await Thought.findByIdAndUpdate(
+        req.params.id,
+        req.body,
+        { new: true }
+      );
+      res.json(updatedThought);
+    } catch (error) {
+      console.error(error.message);
+      res.status(500).send("Server Error");
+    }
   },
 
   deleteThought: async (req, res) => {
-    Thought.findOneAndDelete({_id: req.params.id})
-    .then((thought) => {
-        if(!thought){
-            res.status(404).json({message: 'No thought with that ID'}) 
-        }
-        return User.findOneAndUpdate(
-            {_id:req.body.userID},
-            {$pull:{thoughts:thought._id}},
-            {new:true}
-        )}).then(() => 
-        res.json({message: 'User and associated apps deleted!'}))
-        .catch((err) => res.status(500).json(err));
+    try {
+      const deletedThought = await Thought.findByIdAndDelete(req.params.id);
+      res.json(deletedThought);
+    } catch (error) {
+      console.error(error.message);
+      res.status(500).send("Server Error");
+    }
   },
 
   createReaction: async (req, res) => {
-    console.log('You are creating a reaction');
-    console.log(req.body);
-    Thought.findOneAndUpdate(
-      { _id: req.params.thoughtId },
-      { $addToSet: { reactions: req.body} },
-      { runValidators: true, new: true })
-      .then((thought) =>
-        !thought ? res.status(404)
-        .json({ message: 'No friend found with that ID :(' }) : res.json(thought))
-      .catch((err) => res.status(500).json(err));
+    try {
+      const { thoughtId } = req.params;
+      const thought = await Thought.findById(thoughtId);
+      if (!thought) {
+        return res.status(404).json({ message: "Thought not found" });
+      }
+      const newReaction = await Reaction.create(req.body);
+      thought.reactions.push(newReaction._id);
+      await thought.save();
+      res.json(newReaction);
+    } catch (error) {
+      console.error(error.message);
+      res.status(500).send("Server Error");
+    }
   },
 
   deleteReaction: async (req, res) => {
-    console.log(req.params)
-    Thought.findOneAndUpdate(
-      { _id: req.params.thoughtId },
-      { $pull: { reactions: { reactionId: req.params.reactionId} } },
-      { runValidators: true, new: true })
-      .then((thought) =>
-        !thought ? res.status(404)
-        .json({ message: 'No thought found with that ID :(' }) : res.json(thought))
-      .catch((err) => res.status(500).json(err));
+    try {
+      const { thoughtId, reactionId } = req.params;
+      const thought = await Thought.findById(thoughtId);
+      if (!thought) {
+        return res.status(404).json({ message: "Thought not found" });
+      }
+      thought.reactions.pull(reactionId);
+      await thought.save();
+      const deletedReaction = await Reaction.findByIdAndDelete(reactionId);
+      res.json(deletedReaction);
+    } catch (error) {
+      console.error(error.message);
+      res.status(500).send("Server Error");
+    }
   },
 };
 

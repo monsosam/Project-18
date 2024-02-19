@@ -4,56 +4,96 @@ const Thought = require('../models/thought');
 
 const userController = {
   getAllUsers: async (_req, res) => {
-    User.find().then((users) => 
-    res.json(users)).catch((err) => res.status(500).json(err));
+    try {
+      const users = await User.find().select("-__v");
+      res.json(users);
+  } catch (error) {
+      console.error(error.message);
+      res.status(500).send('Server Error');
+  }
   },
 
   getUserById: async (req, res) => {
-    User.findOne({ _id: req.params.id }).then((user) => 
-    !user ? res.status(404).json({ message: 'No user with that ID' }) : res.json(user))
-    .catch((err) => res.status(500).json(err));
+    try {
+      const user = await User.findById(req.params.id).select("-__v")
+      .populate('thoughts')
+      .populate('friends');
+      if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+      }
+      res.json(user);
+  } catch (error) {
+      console.error(error.message);
+      res.status(500).send('Server Error');
+  }
   },
 
   createUser: async (req, res) => {
-    User.create(req.body).then((dbUserData) => 
-    res.json(dbUserData)).catch((err) => res.status(500).json(err));
+    try {
+      const newUser = await User.create(req.body);
+      res.json(newUser);
+  } catch (error) {
+      console.error(error.message);
+      res.status(500).send('Server Error');
+  }
   },
 
   updateUser: async (req, res) => {
-    User.findOneAndUpdate({ _id: req.params.id }, 
-      { $set: req.body }, 
-      { runValidators: true, new: true })
-      .then((user) => {
-      !user ? res.status(404).json({ message: 'No user' }) : res.json(user) })
-      .catch((err) => res.status(500).json(err));
+    try {
+      const updatedUser = await User.findByIdAndUpdate(
+      req.params.id,
+      req.body,
+      { new: true }
+      );
+      res.json(updatedUser);
+  } catch (error) {
+      console.error(error.message);
+      res.status(500).send('Server Error');
+  }
   },
 
   deleteUser: async (req, res) => {
-    User.findOneAndDelete({ _id: req.params.id }).
-    then((user) => !user ? res.status(404)
-    .json({ message: 'No user with that ID' }) : Thought.deleteMany({ _id: { $in: user.thoughts }}))
-    .then(() => res.json({ message: 'User and associated thoughts deleted!' }))
-    .catch((err) => res.status(500).json(err));
+    try {
+      const deletedUser = await User.findByIdAndDelete(req.params.id);
+
+      await Thought.deleteMany({ username: deletedUser.username });
+      res.json(deletedUser);
+  } catch (error) {
+      console.error(error.message);
+      res.status(500).send('Server Error');
+  }
   },
 
   addFriend: async (req, res) => {
-    console.log('You are adding a friend');
-    console.log(req.body);
-    User.findOneAndUpdate({ _id: req.params.id }, 
-      { $addToSet: { friends: req.params.friendsId }}, 
-      { runValidators: true, new: true })
-      .then((user) => !user ? res.status(404)
-      .json({ message: 'No friend found with that ID :(' }) : res.json(user))
-      .catch((err) => res.status(500).json(err));
+    try {
+      const { userId, friendId } = req.params;
+      const user = await User.findById(userId);
+      if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+      }
+      user.friends.push(friendId);
+      await user.save();
+      res.json(user);
+  } catch (error) {
+      console.error(error.message);
+      res.status(500).send('Server Error');
+  }
   },
 
   removeFriend: async (req, res) => {
-    User.findOneAndUpdate({ _id: req.params.id }, 
-      { $pull: { friends: req.params.friendsId } }, 
-      { runValidators: true, new: true })
-      .then((user) => !user ? res.status(404)
-      .json({ message: 'No friend found with that ID :(' }) : res.json(user))
-      .catch((err) => res.status(500).json(err));
+    try {
+      const { userId, friendId } = req.params;
+      const user = await User.findById(userId);
+      if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+      }
+      user.friends.pull(friendId);
+      await user.save();
+      res.json(user);
+  } catch (error) {
+      console.error(error.message);
+      res.status(500).send('Server Error');
+  }
   },
 };
 
