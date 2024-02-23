@@ -1,57 +1,36 @@
 const mongoose = require('mongoose');
-
-const reactionSchema = new mongoose.Schema({
-    reactionId: {
-      type: mongoose.Schema.Types.ObjectId,
-      default: () => new mongoose.Types.ObjectId(),
-    },
-    reactionBody: {
-      type: String,
-      required: true,
-      maxlength: 280,
-    },
-    username: {
-      type: String,
-      required: true,
-    },
-    createdAt: {
-      type: Date,
-      default: Date.now,
-    },
-  });
-  
-  // Getter method to format the timestamp
-  reactionSchema.set('toObject', { getters: true });
-  reactionSchema.set('toJSON', { getters: true });
-  
-
+// creating the thoughtSchema
 const thoughtSchema = new mongoose.Schema({
+    // the "text" body of the thought
     thoughtText: {
-      type: String,
-      required: true,
-      minlength: 1,
-      maxlength: 280,
-    },
+    type: String,
+    required: true,
+    minlength: 1,
+    maxlength: 280,
+},
+    // when the thought was created
     createdAt: {
-      type: Date,
-      default: Date.now,
-    },
+    type: Date,
+    default: Date.now,
+},
+    // the username of the thought creator
     username: {
-      type: String,
-      required: true,
+    type: String,
+    required: true,
+},
+    // the reactions to the thought
+    reactions: [
+    {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Reaction',
     },
-    reactions: [reactionSchema], // Array of nested documents (reactions)
-  });
-  
-  // Virtual to retrieve reaction count
-  thoughtSchema.virtual('reactionCount').get(function () {
-    return this.reactions.length;
-  });
-  
-  // Getter method to format the timestamp
-  thoughtSchema.set('toObject', { getters: true });
-  thoughtSchema.set('toJSON', { getters: true });
-  
-  const Thought = mongoose.model('Thought', thoughtSchema);
-  
-  module.exports = Thought;
+],
+});
+// getting the length of the reaction count to get total reactions
+thoughtSchema.virtual('reactionCount').get(function () {
+return this.reactions.length;
+});
+
+const Thought = mongoose.model('Thought', thoughtSchema);
+
+module.exports = Thought;
