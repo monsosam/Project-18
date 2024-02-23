@@ -1,6 +1,6 @@
 // controllers/thought-controller.js
 const Thought = require("../models/thought");
-const Reaction = require('../models/reaction');
+const Reaction = require('../models/react');
 
 const thoughtController = {
   getAllThoughts: async (req, res) => {
