@@ -3,6 +3,8 @@ const express = require('express');
 require('dotenv').config();
 
 
+const express = require('express');
+const mongoose = require('mongoose');
 const app = express();
 const PORT = process.env.PORT || 3001;
 
@@ -13,11 +15,8 @@ app.use(express.static('public'));
 app.use(require('./routes/api'));
 
 // Connect mongoose
-mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost/social-network-api', {
-    
-    useNewUrlParser: true,
-    useUnifiedTopology: true
-}).then(() => {
+mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost/social-network-api')
+.then(() => {
     console.log('MongoDB connected');
 }).catch((error) => {
     console.error('MongoDB connection error:', error);
@@ -28,4 +27,4 @@ mongoose.set('debug', true);
 
 app.listen(PORT, () => {
     console.log(`Server running on http://localhost:${PORT}`);
-    });
+});
